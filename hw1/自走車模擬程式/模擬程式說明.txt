@@ -1,5 +1,0 @@
-simple_playground.py中的run_example()函式:
-	state是一個list，裡面有三個元素，[front_dist, right_dist, left_dist]
-	predictAction(state):把state丟進predictAction預測方向盤角度(作業)，並且return方向盤角度(目前預設隨機回傳一個角度)，這邊要自行修改成預測出來的方向盤角度。
-
-執行: python path/simple_playground.py
