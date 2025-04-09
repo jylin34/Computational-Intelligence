@@ -9,8 +9,8 @@ class Car():
         self.radius = 6
         self.angle_min = -90
         self.angle_max = 270
-        self.wheel_min = -40
-        self.wheel_max = 40
+        self.wheel_min = -40 # 模型車方向盤所打的角度
+        self.wheel_max = 40 # ||
         self.xini_max = 4.5
         self.xini_min = -4.5
 
@@ -122,7 +122,7 @@ class Playground():
         self.car_init_pos = None
         self.car_init_angle = None
 
-    def _readPathLines(self):
+    def _readPathLines(self): # still don't understand 
         try:
             with open(self.path_line_filename, 'r', encoding='utf-8') as f:
                 lines = f.readlines()
