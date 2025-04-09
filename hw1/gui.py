@@ -4,6 +4,7 @@ from PyQt5.QtWidgets import (
 )
 from PyQt5.QtGui import QPolygonF, QPen, QColor
 from PyQt5.QtCore import QPointF
+from geometry import parse_track_file
 
 
 class TrackWindow(QWidget):
