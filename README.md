@@ -3,3 +3,7 @@
 ### > [!NOTE]
 Leaving virtual environment.
 > ```deactivate```
+### Todo
+* create run.sh (also venv?)
+
+```
