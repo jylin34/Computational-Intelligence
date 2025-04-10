@@ -1,3 +1,4 @@
+.gitignore
 hw1_venv/
 __pycache__/
 .DS_Store

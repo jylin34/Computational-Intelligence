@@ -10,7 +10,7 @@ from geometry import parse_track_file
 class TrackWindow(QWidget):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Q-Learning Car Simulator")
+        self.setWindowTitle("計算型智慧 作業一 Q-learning")
         self.setGeometry(100, 100, 1000, 600)
 
         # 建立主畫面 layout（水平切左右）
@@ -45,10 +45,11 @@ class TrackWindow(QWidget):
         # 訓練次數
         self.epoch_label = QLabel("Epoch: 0")
         self.control_layout.addWidget(self.epoch_label)
-
+        
         # 決策紀錄
         self.decision_log = QTextEdit()
         self.decision_log.setReadOnly(True)
+        
         self.control_layout.addWidget(QLabel("Decision Log"))
         self.control_layout.addWidget(self.decision_log)
 
@@ -58,18 +59,23 @@ class TrackWindow(QWidget):
             return
 
         # 呼叫 geometry.py 中的解析函式
-        start, goal_tl, goal_br, border = parse_track_file(path)
-        self.draw_track(start, goal_tl, goal_br, border)
+        start, start_tl, start_br, goal_tl, goal_br, border = parse_track_file(path)
+        self.draw_track(start, start_tl, start_br, goal_tl, goal_br, border)
 
-    def draw_track(self, start, goal_tl, goal_br, border_points):
+    def draw_track(self, start, start_tl, start_br, goal_tl, goal_br, border_points):
         self.scene.clear()
 
         # 畫邊界（黑線）
         poly = QPolygonF([QPointF(x * 10, -y * 10) for x, y in border_points])
-        self.scene.addPolygon(poly, QPen(QColor("black"), 2))
+        self.scene.addPolygon(poly, QPen(QColor("white"), 2))
 
         # 畫起點（紅點）
         self.scene.addEllipse(start[0] * 10 - 3, -start[1] * 10 - 3, 6, 6, brush=QColor("red"))
+
+        # 起點線
+        x1, y1 = start_tl
+        x2, y2 = start_br
+        self.scene.addLine(x1 * 10, -y1 * 10, x2 * 10, -y2 * 10, QPen(QColor("gray"), 2))
 
         # 畫終點（綠框）
         x1, y1 = goal_tl
