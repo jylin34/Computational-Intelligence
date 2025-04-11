@@ -1,9 +1,9 @@
 from PyQt5.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel,
-    QLineEdit, QTextEdit, QGraphicsView, QGraphicsScene, QFileDialog
+    QLineEdit, QTextEdit, QGraphicsView, QGraphicsScene, QFileDialog, QFormLayout
 )
 from PyQt5.QtGui import QPolygonF, QPen, QColor
-from PyQt5.QtCore import QPointF
+from PyQt5.QtCore import QPointF, Qt
 from geometry import parse_track_file
 from car import Car
 import math
@@ -13,15 +13,17 @@ class TrackWindow(QWidget):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("計算型智慧 作業一 Q-learning")
-        self.setGeometry(100, 100, 650, 600)
+        self.setGeometry(100, 100, 700, 550)
 
         # 建立主畫面 layout（水平切左右）
         main_layout = QHBoxLayout(self)
 
         # 左側：控制區
         self.control_layout = QVBoxLayout()
+        self.param_layout = QFormLayout()
         self.init_control_panel()
-        main_layout.addLayout(self.control_layout, 1)  # 左邊佔 1 份寬度
+        main_layout.addLayout(self.control_layout, 2)  # 左邊佔 1 份寬度
+        self.control_layout.addLayout(self.param_layout)
 
         # 右側：畫布區
         self.scene = QGraphicsScene()
@@ -37,35 +39,40 @@ class TrackWindow(QWidget):
 
         # Learning Rate
         self.lr_input = QLineEdit("0.1")
-        self.control_layout.addWidget(QLabel("Learning Rate"))
-        self.control_layout.addWidget(self.lr_input)
+        self.param_layout.addRow(QLabel("Learning Rate"), self.lr_input)
 
-        # Epsilon (epsilon-greedy)
+        # Epsilon
         self.eps_input = QLineEdit("0.2")
-        self.control_layout.addWidget(QLabel("Epsilon"))
-        self.control_layout.addWidget(self.eps_input)
+        self.param_layout.addRow(QLabel("Epsilon"), self.eps_input)
 
-        # discounted factor
+        # Epsilon Decay
+        self.epsd_input = QLineEdit("0.9")
+        self.param_layout.addRow(QLabel("Epsilon Decay"), self.epsd_input)
+
+        # Discount Factor
         self.discounted_factor = QLineEdit("0.99")
-        self.control_layout.addWidget(QLabel("Discounted Factor"))
-        self.control_layout.addWidget(self.discounted_factor)
+        self.param_layout.addRow(QLabel("Discount Factor"), self.discounted_factor)
 
-        # step
+        # Step
         self.step = QLineEdit("500")
-        self.control_layout.addWidget(QLabel("step"))
-        self.control_layout.addWidget(self.step)
+        self.param_layout.addRow(QLabel("Step"), self.step)
 
-        # 訓練次數
+        # Episode
         self.episode_label = QLineEdit("500")
-        self.control_layout.addWidget(QLabel("Episode"))
-        self.control_layout.addWidget(self.episode_label)
-        
+        self.param_layout.addRow(QLabel("Episode"), self.episode_label)
+
+        self.control_layout.addLayout(self.param_layout)
+
         # 決策紀錄
         self.decision_log = QTextEdit()
         self.decision_log.setReadOnly(True)
         
         self.control_layout.addWidget(QLabel("Decision Log"))
         self.control_layout.addWidget(self.decision_log)
+
+        # Car information
+        
+        # Sensor Detection
 
         # 車子的部分
         self.car = None
@@ -82,7 +89,7 @@ class TrackWindow(QWidget):
         self.draw_track(start, start_tl, start_br, goal_tl, goal_br, border)
 
     def draw_track(self, start, start_tl, start_br, goal_tl, goal_br, border_points):
-        SCALE = 5
+        SCALE = 4
         self.scene.clear()
 
         # 畫邊界（黑線）
