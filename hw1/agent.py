@@ -12,7 +12,9 @@ class Agent:
         self.num_actions = num_actions
 
     def get_state(self, sensor_values):
-        
+        bins = [int(min(s // 5, 9)) for s in sensor_values] # 5~10 10~15, 5 for each segment
+        return tuple(bins)
+
     def select_action(self, state):
         if state not in self.q_table:
             self.q_table[state] = [0.0] * self.num_actions
