@@ -22,7 +22,7 @@ class Car:
             theta -= 360
         return theta
 
-    def get_sensor_distance(self, border_segments):
+    def get_sensor_distances(self, border_segments):
         angles = [self.theta - 45, self.theta, self.theta + 45]
         return [
             cast_ray(self.x, self.y, angle, border_segments)

@@ -4,10 +4,10 @@ from PyQt5.QtWidgets import (
 )
 from PyQt5.QtGui import QPolygonF, QPen, QColor
 from PyQt5.QtCore import QPointF, Qt
-from geometry import parse_track_file
+from geometry import parse_track_file, border_to_segments
 from car import Car
 import math
-
+from agent import Agent
 
 class TrackWindow(QWidget):
     def __init__(self):
@@ -30,6 +30,17 @@ class TrackWindow(QWidget):
         self.view = QGraphicsView(self.scene)
         self.view.scale(2, 2)
         main_layout.addWidget(self.view, 3)  # 右邊佔 3 份寬度
+        
+        self.agent = QLearningAgent(
+            learning_rate=float(self.lr_input.text()),
+            discount_factor=float(self.discounted_factor.text()),
+            epsilon=float(self.eps_input.text()),
+            epsilon_decay=float(self.epsd_input.text())
+        )
+
+        self.border_points = []
+
+        self.SCALE = 0
 
     def init_control_panel(self):
         # 匯入座標檔案
@@ -89,7 +100,10 @@ class TrackWindow(QWidget):
         self.draw_track(start, start_tl, start_br, goal_tl, goal_br, border)
 
     def draw_track(self, start, start_tl, start_br, goal_tl, goal_br, border_points):
-        SCALE = 4
+        self.SCALE = 4
+
+        self.border_points = border_points
+
         self.scene.clear()
 
         # 畫邊界（黑線）
@@ -132,9 +146,25 @@ class TrackWindow(QWidget):
         self.decision_log.append(text)
 
     def train_step(self):
-        # 1. 取得狀態
-        # 2. 選擇動作
-        # 3. 更新車子位置
-        # 4. 感測新狀態
+        # 1. 取得state
+        sensor = self.car.get_sensor_distances(border_to_segments(self.border_points))
+        state = self.agent.get_state(sensor)
+
+        # 2. 根據state 選擇action 並更新car 
+        action = self.agent.select_action(state)
+        angle_choices = [-40, -20, 0, 20, 40]
+        self.car.rotate(angle_choices[action])
+        self.car.move_forward(step=self.SCALE)
+
+        # 3. 更新state
+        next_sensor = self.car.get_sensor_distances(border_to_segments(self.border_points))
+        next_state = self.agent.get_state(next_sensor)
+
+        # 4. 計算reward
+        reward, done = self.get_reward()
+
         # 5. 更新 Q-table
-        # 6. 判斷是否成功 / 撞牆 / 結束
+        
+        # 6. 更新畫面
+        
+        # 7.
