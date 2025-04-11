@@ -130,3 +130,11 @@ class TrackWindow(QWidget):
 
     def log_decision(self, text):
         self.decision_log.append(text)
+
+    def train_step(self):
+        # 1. 取得狀態
+        # 2. 選擇動作
+        # 3. 更新車子位置
+        # 4. 感測新狀態
+        # 5. 更新 Q-table
+        # 6. 判斷是否成功 / 撞牆 / 結束
