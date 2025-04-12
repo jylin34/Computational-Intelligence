@@ -13,9 +13,9 @@ class Car:
         self.y += step * math.sin(rad)
 
     def rotate(self, delta_angle):
-        self.theta = normalize_angle(self.theta + delta_angle)
+        self.theta = self.normalize_angle(self.theta + delta_angle)
 
-    def normalize_angle(theta): # phi: -90 ~ 270
+    def normalize_angle(self, theta): # phi: -90 ~ 270
         while theta < -90:
             theta += 360
         while theta >= 270:
