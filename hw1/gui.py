@@ -4,7 +4,7 @@ from PyQt5.QtWidgets import (
 )
 from PyQt5.QtGui import QPolygonF, QPen, QColor, QPainterPath, QBrush
 from PyQt5.QtCore import QPointF, Qt, QTimer
-from geometry import parse_track_file, border_to_segments
+from geometry import parse_track_file, border_to_segments, is_circle_near_segment
 from car import Car
 import math
 from agent import Agent
@@ -239,11 +239,11 @@ class TrackWindow(QWidget):
         self.sensor_front_label.setText(f"Front: {sensor[1]:.2f}")
         self.sensor_right_label.setText(f"Right: {sensor[2]:.2f}")
        
-        self.car_item = self.scene.addEllipse(self.car.x - 3 * self.SCALE, -self.car.y - 3 * self.SCALE, 6 * self.SCALE, 6 * self.SCALE, QPen(QColor("blue")))
+        self.car_item = self.scene.addEllipse(self.car.x * self.SCALE - 3 * self.SCALE, -self.car.y * self.SCALE - 3 * self.SCALE, 6 * self.SCALE, 6 * self.SCALE, QPen(QColor("blue")))
         rad = math.radians(self.car.theta)
-        x2 = self.car.x + math.cos(rad) * 1.0 * self.SCALE
-        y2 = self.car.y + math.sin(rad) * 1.0 * self.SCALE
-        self.car_dir_line = self.scene.addLine(self.car.x, -self.car.y, x2 + 3 * self.SCALE * math.cos(rad), -y2 - 3 * self.SCALE * math.sin(rad), QPen(QColor("cyan"), 1))
+        x2 = self.car.x + math.cos(rad) * 1.0 
+        y2 = self.car.y + math.sin(rad) * 1.0 
+        self.car_dir_line = self.scene.addLine(self.car.x * self.SCALE, -self.car.y * self.SCALE, x2 * self.SCALE + 3 * self.SCALE * math.cos(rad), -y2 * self.SCALE - 3 * self.SCALE * math.sin(rad), QPen(QColor("cyan"), 1))
   
     def start_training(self):
         self.agent = Agent(
@@ -262,17 +262,18 @@ class TrackWindow(QWidget):
 
     def get_reward(self):
         x, y = self.car.x, self.car.y
+        radius = 3  # 車子半徑
+
         gx1, gy1 = self.goal_tl
         gx2, gy2 = self.goal_br
-        if gx1 <= x <= gx2 and gy2 <= y <= gy1: # 抵達終點：100
-            return 100, True
-        for (x1, y1, x2, y2) in border_to_segments(self.border_points):
-            if (min(x1, x2) <= x <= max(x1, x2) and min(y1, y2) <= y <= max(y1, y2)):
-                dist = abs((y2 - y1)*x - (x2 - x1)*y + x2*y1 - y2*x1)
-                dist /= math.hypot(x2 - x1, y2 - y1)
-                if dist < 0.3:
-                    return -100, True # 撞到牆壁：-100
-        return -1, False # 每多走一步：-1
+        if gx1 <= x <= gx2 and gy2 <= y <= gy1:
+           return 100, True
+
+        for x1, y1, x2, y2 in border_to_segments(self.border_points):
+            if is_circle_near_segment(x, y, radius, x1, y1, x2, y2):
+                return -100, True
+
+        return -1, False
 
     def update_epoch(self, epoch):
         self.episode_label.setText(f"Epoch: {epoch}")

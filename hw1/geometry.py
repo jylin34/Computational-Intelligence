@@ -57,3 +57,20 @@ def border_to_segments(border_points): # 輸入所有邊界點, 然後輸出線�
         x2, y2 = border_points[(i + 1) % len(border_points)]
         segments.append((x1, y1, x2, y2))
     return segments
+
+def is_circle_near_segment(cx, cy, radius, x1, y1, x2, y2):
+    # 計算最近點到線段的距離
+    dx = x2 - x1
+    dy = y2 - y1
+    length_sq = dx * dx + dy * dy
+    if length_sq == 0:
+        # 線段是一個點
+        dist_sq = (cx - x1) ** 2 + (cy - y1) ** 2
+        return dist_sq <= radius ** 2
+
+    t = max(0, min(1, ((cx - x1) * dx + (cy - y1) * dy) / length_sq))
+    nearest_x = x1 + t * dx
+    nearest_y = y1 + t * dy
+    dist_sq = (cx - nearest_x) ** 2 + (cy - nearest_y) ** 2
+
+    return dist_sq <= radius ** 2
