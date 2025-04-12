@@ -42,6 +42,7 @@ class TrackWindow(QWidget):
         self.timer.timeout.connect(self.train_step)
         self.path = QPainterPath()           # 記錄所有點
         self.trajectory_item = None          # 對應的 QG
+        self.is_testing = False
         # self.agent = Agent(
         #    lr=float(self.lr_input.text()),
         #    discount_factor=float(self.discounted_factor.text()),
@@ -363,3 +364,32 @@ class TrackWindow(QWidget):
             if self.current_episode >= int(self.episode_label.text()):
                 self.timer.stop()
                 self.log_decision("✅ Training complete.")
+                self.run_test_episode()  # 加這行！
+
+    def run_test_episode(self):
+        self.reset_car()
+        self.is_testing = True
+        self.test_timer = QTimer()
+        self.test_timer.timeout.connect(self.test_step)
+        self.test_timer.start(100)
+
+    def test_step(self):
+        sensor = self.car.get_sensor_distances(border_to_segments(self.border_points))
+        state = self.agent.get_state(sensor)
+
+        # 完全 greedy 選擇最優動作
+        q_values = self.agent.q_table.get(state, [0]*5)
+        action = q_values.index(max(q_values))
+        angle_choices = [-40, -20, 0, 20, 40]
+
+        self.car.rotate(angle_choices[action])
+        self.car.move_forward(step=1)
+
+        self.update_car_graphics()
+
+        reward, done = self.get_reward()
+        if done:
+            self.test_timer.stop()
+            self.is_testing = False
+            self.log_decision("🧪 Test episode complete.")
+
