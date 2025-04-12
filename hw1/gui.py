@@ -348,8 +348,8 @@ class TrackWindow(QWidget):
         # 2. 根據state 選擇action 並更新car 
         action = self.agent.select_action(state)
         angle_choices = [-40, -20, 0, 20, 40]
-        self.car.rotate(angle_choices[action])
-        self.car.move_forward(step=self.STEP)
+        # self.car.rotate(angle_choices[action])
+        self.car.move_forward(angle_choices[action])
 
         # 3. 更新state
         next_sensor = self.car.get_sensor_distances(border_to_segments(self.border_points))
@@ -392,8 +392,8 @@ class TrackWindow(QWidget):
         action = q_values.index(max(q_values))
         angle_choices = [-40, -20, 0, 20, 40]
 
-        self.car.rotate(angle_choices[action])
-        self.car.move_forward(step=self.STEP)
+        # self.car.rotate(angle_choices[action])
+        self.car.move_forward(angle_choices[action])
 
         self.update_car_graphics()
 

@@ -7,13 +7,24 @@ class Car:
         self.y = y
         self.theta = theta
 
-    def move_forward(self, angle):
-        rad = math.radians(self.theta + angle)
-        self.x += math.cos(rad) + math.sin(math.radians(self.theta)) * math.sin(math.radians(angle))
-        self.y += math.sin(rad) - math.sin(math.radians(self.theta)) * math.cos(math.radians(angle))
+    def move_forward(self, theta, step=1, wheel_base=6):
+        rad_phi = math.radians(self.theta)
+        rad_theta = math.radians(theta)
+
+        # 更新 x
+        self.x += math.cos(rad_phi + rad_theta) + math.sin(rad_theta) * math.sin(rad_phi)
+
+        # 更新 y
+        self.y += math.sin(rad_phi + rad_theta) - math.sin(rad_theta) * math.cos(rad_phi)
+
+        # 更新 heading 角度（phi）
+        delta_phi = math.degrees(math.asin(2 * math.sin(rad_theta) / wheel_base))
+        self.theta -= delta_phi
+        self.theta = self.normalize_angle(self.theta)
 
     def rotate(self, delta_angle):
-        self.theta = self.normalize_angle(self.theta + delta_angle)
+        # self.theta = self.normalize_angle(self.theta + delta_angle)
+        self.theta -= math.asin(2 * math.sin(-delta_angle) / 6)
 
     def normalize_angle(self, theta): # phi: -90 ~ 270
         while theta < -90:
