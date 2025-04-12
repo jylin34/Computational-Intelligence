@@ -1,6 +1,6 @@
 from PyQt5.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel,
-    QLineEdit, QTextEdit, QGraphicsView, QGraphicsScene, QFileDialog, QFormLayout, QGridLayout, QGroupBox
+    QLineEdit, QTextEdit, QGraphicsView, QGraphicsScene, QFileDialog, QFormLayout, QGridLayout, QGroupBox, QSlider
 )
 from PyQt5.QtGui import QPolygonF, QPen, QColor, QPainterPath, QBrush
 from PyQt5.QtCore import QPointF, Qt, QTimer
@@ -81,6 +81,24 @@ class TrackWindow(QWidget):
 
         self.control_layout.addLayout(self.param_layout)
 
+        # 執行速度調整 + 顯示文字
+        self.speed_label = QLabel("Training Speed: 100 ms")
+        self.speed_label.setStyleSheet("font-weight: bold;")
+        self.control_layout.addWidget(self.speed_label)
+
+        self.speed_slider = QSlider(Qt.Horizontal)
+        self.speed_slider.setMinimum(1)
+        self.speed_slider.setMaximum(1000)
+        self.speed_slider.setValue(100)  # 預設間隔 100ms
+        self.speed_slider.setTickInterval(50)
+        self.speed_slider.setTickPosition(QSlider.TicksBelow)
+
+        self.speed_slider.valueChanged.connect(
+            lambda value: self.speed_label.setText(f"Training Speed: {value} ms")
+        )
+
+        self.control_layout.addWidget(self.speed_slider)
+
         self.start_btn = QPushButton("Start Training")
         self.start_btn.clicked.connect(self.start_training)
         self.control_layout.addWidget(self.start_btn)
@@ -138,7 +156,7 @@ class TrackWindow(QWidget):
         self.sensor_info_grid.addWidget(self.sensor_right_label, 0, 2)
         sensor_group.setLayout(self.sensor_info_grid)
 
-        self.control_layout.addWidget(sensor_group) 
+        self.control_layout.addWidget(sensor_group)
         # 車子的部分
         # self.car = None
         # self.car_item = None
@@ -235,7 +253,8 @@ class TrackWindow(QWidget):
             epsilon_decay=float(self.epsd_input.text())
         )
         self.current_episode = 0
-        self.timer.start(50) # 
+        interval = self.speed_slider.value()  # 單位是毫秒
+        self.timer.start(interval)
 
     def stop_training(self):
         self.timer.stop()
