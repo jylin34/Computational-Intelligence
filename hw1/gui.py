@@ -37,6 +37,7 @@ class TrackWindow(QWidget):
         self.car_dir_line = None
         self.border_points = []
         self.SCALE = 4
+        self.STEP = 1
         self.current_episode = 0
         self.timer = QTimer()
         self.timer.timeout.connect(self.train_step)
@@ -125,7 +126,7 @@ class TrackWindow(QWidget):
         self.car_info_grid = QGridLayout()
         self.car_x_label = QLabel("X: 0.00")
         self.car_y_label = QLabel("Y: 0.00")
-        self.car_theta_label = QLabel("θ: 0.0°")
+        self.car_theta_label = QLabel("θ: 0.00°")
 
         for lbl in [self.car_x_label, self.car_y_label, self.car_theta_label]:
             lbl.setFixedWidth(80)
@@ -176,6 +177,15 @@ class TrackWindow(QWidget):
         self.draw_track(start, start_tl, start_br, goal_tl, goal_br, border)
 
     def draw_track(self, start, start_tl, start_br, goal_tl, goal_br, border_points):
+        # axis_pen = QPen(QColor("gray"))
+        # axis_pen.setStyle(Qt.DashLine)  # 虛線更不干擾畫面
+
+        # X 軸：從左到右
+        # self.scene.addLine(-1000, 0, 1000, 0, axis_pen)
+
+        # Y 軸：從上到下
+        # self.scene.addLine(0, -1000, 0, 1000, axis_pen)
+
         self.border_points = border_points
 
         self.scene.clear()
@@ -269,7 +279,7 @@ class TrackWindow(QWidget):
         # print(f"trace point: ({x:.2f}, {y:.2f})")
         # print(f"path element count: {self.path.elementCount()}")
        
-        pen = QPen(QColor(0, 0, 255, 100))    # 淡藍色邊框
+        pen = QPen(QColor(0, 0, 255, 70))    # 淡藍色邊框
         brush = QBrush(QColor(0, 0, 255, 30)) # 更淡的藍色填色（或改為透明）
 
         self.car_item = self.scene.addEllipse(
@@ -284,7 +294,7 @@ class TrackWindow(QWidget):
         rad = math.radians(self.car.theta)
         x2 = self.car.x + math.cos(rad) * 1.0 
         y2 = self.car.y + math.sin(rad) * 1.0 
-        pen = QPen(QColor(0, 255, 255, 100), 1)  # 半透明 cyan，alpha=100
+        pen = QPen(QColor(0, 255, 255, 70), 1)  # 半透明 cyan，alpha=100
         self.car_dir_line = self.scene.addLine(
             self.car.x * self.SCALE,
            -self.car.y * self.SCALE,
@@ -339,7 +349,7 @@ class TrackWindow(QWidget):
         action = self.agent.select_action(state)
         angle_choices = [-40, -20, 0, 20, 40]
         self.car.rotate(angle_choices[action])
-        self.car.move_forward(step=self.SCALE/2)
+        self.car.move_forward(step=self.STEP)
 
         # 3. 更新state
         next_sensor = self.car.get_sensor_distances(border_to_segments(self.border_points))
@@ -383,7 +393,7 @@ class TrackWindow(QWidget):
         angle_choices = [-40, -20, 0, 20, 40]
 
         self.car.rotate(angle_choices[action])
-        self.car.move_forward(step=1)
+        self.car.move_forward(step=self.STEP)
 
         self.update_car_graphics()
 
