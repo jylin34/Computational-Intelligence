@@ -44,6 +44,7 @@ class TrackWindow(QWidget):
         self.path = QPainterPath()           # 記錄所有點
         self.trajectory_item = None          # 對應的 QG
         self.is_testing = False
+        self.step_reward = 1
         # self.agent = Agent(
         #    lr=float(self.lr_input.text()),
         #    discount_factor=float(self.discounted_factor.text()),
@@ -58,19 +59,19 @@ class TrackWindow(QWidget):
         self.control_layout.addWidget(self.import_btn)
 
         # Learning Rate
-        self.lr_input = QLineEdit("0.1")
+        self.lr_input = QLineEdit("0.31")
         self.param_layout.addRow(QLabel("Learning Rate"), self.lr_input)
 
         # Epsilon
-        self.eps_input = QLineEdit("0.2")
+        self.eps_input = QLineEdit("1")
         self.param_layout.addRow(QLabel("Epsilon"), self.eps_input)
 
         # Epsilon Decay
-        self.epsd_input = QLineEdit("0.9")
+        self.epsd_input = QLineEdit("0.995")
         self.param_layout.addRow(QLabel("Epsilon Decay"), self.epsd_input)
 
         # Discount Factor
-        self.discounted_factor = QLineEdit("0.99")
+        self.discounted_factor = QLineEdit("0.95")
         self.param_layout.addRow(QLabel("Discount Factor"), self.discounted_factor)
 
         # Step
@@ -78,20 +79,20 @@ class TrackWindow(QWidget):
         self.param_layout.addRow(QLabel("Step"), self.step)
 
         # Episode
-        self.episode_label = QLineEdit("500")
+        self.episode_label = QLineEdit("3000")
         self.param_layout.addRow(QLabel("Episode"), self.episode_label)
 
         self.control_layout.addLayout(self.param_layout)
 
         # 執行速度調整 + 顯示文字
-        self.speed_label = QLabel("Training Speed: 100 ms")
+        self.speed_label = QLabel("Training Speed: 1 ms")
         self.speed_label.setStyleSheet("font-weight: bold;")
         self.control_layout.addWidget(self.speed_label)
 
         self.speed_slider = QSlider(Qt.Horizontal)
         self.speed_slider.setMinimum(1)
         self.speed_slider.setMaximum(1000)
-        self.speed_slider.setValue(100)  # 預設間隔 100ms
+        self.speed_slider.setValue(1)  # 預設間隔 100ms
         self.speed_slider.setTickInterval(50)
         self.speed_slider.setTickPosition(QSlider.TicksBelow)
 
@@ -232,6 +233,8 @@ class TrackWindow(QWidget):
         theta = 90
         self.car = Car(self.start[0] * self.SCALE, self.start[1] * self.SCALE, theta=theta)
 
+        self.step_reward = 1
+
         # 清除舊軌跡線
         if self.trajectory_item:
             self.scene.removeItem(self.trajectory_item)
@@ -326,13 +329,14 @@ class TrackWindow(QWidget):
         gx1, gy1 = self.goal_tl
         gx2, gy2 = self.goal_br
         if gx1 <= x <= gx2 and gy2 <= y <= gy1:
-           return 100, True
+           return 100000000000000, True
 
         for x1, y1, x2, y2 in border_to_segments(self.border_points):
             if is_circle_near_segment(x, y, radius, x1, y1, x2, y2):
-                return -100, True
+                return -1000, True
 
-        return -1, False
+        self.step_reward *= 1.2
+        return self.step_reward, False
 
     def update_epoch(self, epoch):
         self.episode_label.setText(f"Epoch: {epoch}")
@@ -347,7 +351,7 @@ class TrackWindow(QWidget):
 
         # 2. 根據state 選擇action 並更新car 
         action = self.agent.select_action(state)
-        angle_choices = [-40, -20, 0, 20, 40]
+        angle_choices = [-40, 0, 40]
         # self.car.rotate(angle_choices[action])
         self.car.move_forward(angle_choices[action])
 
@@ -388,9 +392,9 @@ class TrackWindow(QWidget):
         state = self.agent.get_state(sensor)
 
         # 完全 greedy 選擇最優動作
-        q_values = self.agent.q_table.get(state, [0]*5)
+        q_values = self.agent.q_table.get(state, [0]*3)
         action = q_values.index(max(q_values))
-        angle_choices = [-40, -20, 0, 20, 40]
+        angle_choices = [-40, 0, 40]
 
         # self.car.rotate(angle_choices[action])
         self.car.move_forward(angle_choices[action])

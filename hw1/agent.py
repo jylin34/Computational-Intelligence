@@ -2,7 +2,7 @@ import random
 import math
 
 class Agent:
-    def __init__(self, lr, discount_factor, epsilon, epsilon_decay, min_epsilon=0.05, num_actions=5):
+    def __init__(self, lr, discount_factor, epsilon, epsilon_decay, min_epsilon=0.05, num_actions=3):
         self.q_table = {}
         self.lr = lr
         self.gamma = discount_factor
@@ -12,12 +12,31 @@ class Agent:
         self.num_actions = num_actions
 
     def get_state(self, sensor_values):
-        bins = [int(min(s // 5, 9)) for s in sensor_values] # 5~10 10~15, 5 for each segment
+        bins = [int(min(s // 5, 10)) for s in sensor_values] # 5~10 10~15, 5 for each segment
         return tuple(bins)
+        # ld, fd, rd = sensor_values
+        # return rd - ld
+        
 
     def select_action(self, state):
         if state not in self.q_table:
             self.q_table[state] = [0.0] * self.num_actions
+        
+        # ld, fd, rd = state
+
+        # if fd > rd and fd > ld:
+        #    print("直走")
+        #    return 2
+        # if rd == 9:
+        #    print("右轉")
+        #    return 4
+        # elif ld == 9:
+        #    print("左轉")
+        #    return 0
+        # elif ld > (fd + rd):
+        #    return 0
+        # elif rd > (fd + ld):
+        #    return 4
 
         # Epsilon-Greedy
         if random.random() < self.epsilon:

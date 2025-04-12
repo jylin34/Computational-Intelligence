@@ -13,25 +13,40 @@ def parse_track_file(filepath):
 
     return start, start_tl, start_br, goal_tl, goal_br, border
 
-def cast_ray(x, y, angle_deg, border_segments, max_distance=100, step=0.5): # 偵測
+def cast_ray(x, y, angle_deg, border_segments, max_distance=1000):
     rad = math.radians(angle_deg)
     dx = math.cos(rad)
     dy = math.sin(rad)
 
-    distance = 0.0
-    while distance < max_distance:
-        rx = x + dx * distance
-        ry = y + dy * distance
+    min_dist = max_distance
 
-        for x1, y1, x2, y2 in border_segments:
-            if point_near_segment(rx, ry, x1, y1, x2, y2, tolerance=0.1):
-                return distance
-        
-        distance += step
+    for x1, y1, x2, y2 in border_segments:
+        hit, dist = ray_segment_intersect(x, y, dx, dy, x1, y1, x2, y2)
+        if hit and dist < min_dist:
+            min_dist = dist
 
-    return max_distance
+    return min_dist
 
-def point_near_segment(px, py, x1, y1, x2, y2, tolerance=0.1): # 如果回傳True 代表感測點已經靠近牆壁
+def ray_segment_intersect(x, y, dx, dy, x1, y1, x2, y2):
+    # 射線方向向量 (dx, dy)
+    # 線段向量 (sx, sy)
+    sx = x2 - x1
+    sy = y2 - y1
+
+    denom = dx * sy - dy * sx
+    if abs(denom) < 1e-8:
+        return False, None  # 平行，不相交
+
+    t = ((x1 - x) * sy - (y1 - y) * sx) / denom
+    u = ((x1 - x) * dy - (y1 - y) * dx) / denom
+
+    if t >= 0 and 0 <= u <= 1:
+        # 相交，距離 = t * 向量長
+        return True, t * math.hypot(dx, dy)
+    else:
+        return False, None
+
+def point_near_segment(px, py, x1, y1, x2, y2, tolerance): # 如果回傳True 代表感測點已經靠近牆壁
     # 線段長度為 0（起點 = 終點）就直接跳過
     if x1 == x2 and y1 == y2:
         return False
