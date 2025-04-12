@@ -351,7 +351,7 @@ class TrackWindow(QWidget):
 
         # 2. 根據state 選擇action 並更新car 
         action = self.agent.select_action(state)
-        angle_choices = [-40, 0, 40]
+        angle_choices = [-40, -20, 0, 20, 40]
         # self.car.rotate(angle_choices[action])
         self.car.move_forward(angle_choices[action])
 
@@ -392,9 +392,9 @@ class TrackWindow(QWidget):
         state = self.agent.get_state(sensor)
 
         # 完全 greedy 選擇最優動作
-        q_values = self.agent.q_table.get(state, [0]*3)
+        q_values = self.agent.q_table.get(state, [0]*5)
         action = q_values.index(max(q_values))
-        angle_choices = [-40, 0, 40]
+        angle_choices = [-40, -20, 0, 20, 40]
 
         # self.car.rotate(angle_choices[action])
         self.car.move_forward(angle_choices[action])

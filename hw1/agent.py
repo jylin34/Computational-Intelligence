@@ -2,7 +2,7 @@ import random
 import math
 
 class Agent:
-    def __init__(self, lr, discount_factor, epsilon, epsilon_decay, min_epsilon=0.05, num_actions=3):
+    def __init__(self, lr, discount_factor, epsilon, epsilon_decay, min_epsilon=0.05, num_actions=5):
         self.q_table = {}
         self.lr = lr
         self.gamma = discount_factor
@@ -12,7 +12,7 @@ class Agent:
         self.num_actions = num_actions
 
     def get_state(self, sensor_values):
-        bins = [int(min(s // 5, 10)) for s in sensor_values] # 5~10 10~15, 5 for each segment
+        bins = [int(min(s // 5, 5)) for s in sensor_values] # 5~10 10~15, 5 for each segment
         return tuple(bins)
         # ld, fd, rd = sensor_values
         # return rd - ld
