@@ -2,7 +2,7 @@ from PyQt5.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel,
     QLineEdit, QTextEdit, QGraphicsView, QGraphicsScene, QFileDialog, QFormLayout, QGridLayout, QGroupBox
 )
-from PyQt5.QtGui import QPolygonF, QPen, QColor
+from PyQt5.QtGui import QPolygonF, QPen, QColor, QPainterPath, QBrush
 from PyQt5.QtCore import QPointF, Qt, QTimer
 from geometry import parse_track_file, border_to_segments
 from car import Car
@@ -40,6 +40,8 @@ class TrackWindow(QWidget):
         self.current_episode = 0
         self.timer = QTimer()
         self.timer.timeout.connect(self.train_step)
+        self.path = QPainterPath()           # 記錄所有點
+        self.trajectory_item = None          # 對應的 QG
         # self.agent = Agent(
         #    lr=float(self.lr_input.text()),
         #    discount_factor=float(self.discounted_factor.text()),
@@ -218,13 +220,13 @@ class TrackWindow(QWidget):
         self.sensor_left_label.setText(f"Left: {sensor[0]:.2f}")
         self.sensor_front_label.setText(f"Front: {sensor[1]:.2f}")
         self.sensor_right_label.setText(f"Right: {sensor[2]:.2f}")
-
+       
         self.car_item = self.scene.addEllipse(self.car.x - 3 * self.SCALE, -self.car.y - 3 * self.SCALE, 6 * self.SCALE, 6 * self.SCALE, QPen(QColor("blue")))
         rad = math.radians(self.car.theta)
         x2 = self.car.x + math.cos(rad) * 1.0 * self.SCALE
         y2 = self.car.y + math.sin(rad) * 1.0 * self.SCALE
         self.car_dir_line = self.scene.addLine(self.car.x, -self.car.y, x2 + 3 * self.SCALE * math.cos(rad), -y2 - 3 * self.SCALE * math.sin(rad), QPen(QColor("cyan"), 1))
-
+  
     def start_training(self):
         self.agent = Agent(
             lr=float(self.lr_input.text()),
