@@ -7,7 +7,7 @@ class Car:
         self.y = y
         self.theta = theta
 
-    def move_forward(self, step=1):
+    def move_forward(self, step=0.1):
         rad = math.radians(self.theta)
         self.x += step * math.cos(rad)
         self.y += step * math.sin(rad)

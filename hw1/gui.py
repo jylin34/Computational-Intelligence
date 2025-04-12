@@ -13,7 +13,7 @@ class TrackWindow(QWidget):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("計算型智慧 作業一 Q-learning")
-        self.setGeometry(100, 100, 800, 550)
+        self.setGeometry(100, 100, 900, 550)
 
         # 建立主畫面 layout（水平切左右）
         main_layout = QHBoxLayout(self)
@@ -220,6 +220,16 @@ class TrackWindow(QWidget):
         # theta = random.choice([90, 0, -45])
         theta = 90
         self.car = Car(self.start[0] * self.SCALE, self.start[1] * self.SCALE, theta=theta)
+
+        # 清除舊軌跡線
+        if self.trajectory_item:
+            self.scene.removeItem(self.trajectory_item)
+            self.trajectory_item = None
+        self.path = QPainterPath()
+        x = self.car.x * self.SCALE
+        y = -self.car.y * self.SCALE
+        self.path.moveTo(x, y)
+
         self.update_car_graphics()
 
     def update_car_graphics(self):
@@ -238,12 +248,50 @@ class TrackWindow(QWidget):
         self.sensor_left_label.setText(f"Left: {sensor[0]:.2f}")
         self.sensor_front_label.setText(f"Front: {sensor[1]:.2f}")
         self.sensor_right_label.setText(f"Right: {sensor[2]:.2f}")
+
+        # 更新軌跡線（加入新座標點）
+        x = self.car.x * self.SCALE
+        y = -self.car.y * self.SCALE
+        # print(x, y)
+
+        # if self.path.isEmpty():
+        #    self.path.moveTo(x, y)
+        # else:
+        self.path.lineTo(x, y)
+
+        if self.trajectory_item:    
+            self.trajectory_item.setPath(self.path)
+        else:
+            # print("=======================================")
+            pen = QPen(QColor("white"), 1)  # 半透明黃線
+            self.trajectory_item = self.scene.addPath(self.path, pen)
+        # print(f"trace point: ({x:.2f}, {y:.2f})")
+        # print(f"path element count: {self.path.elementCount()}")
        
-        self.car_item = self.scene.addEllipse(self.car.x * self.SCALE - 3 * self.SCALE, -self.car.y * self.SCALE - 3 * self.SCALE, 6 * self.SCALE, 6 * self.SCALE, QPen(QColor("blue")))
+        pen = QPen(QColor(0, 0, 255, 100))    # 淡藍色邊框
+        brush = QBrush(QColor(0, 0, 255, 30)) # 更淡的藍色填色（或改為透明）
+
+        self.car_item = self.scene.addEllipse(
+            self.car.x * self.SCALE - 3 * self.SCALE,
+            -self.car.y * self.SCALE - 3 * self.SCALE,
+            6 * self.SCALE,
+            6 * self.SCALE,
+            pen,
+            brush
+        )
+        # self.car_item = self.scene.addEllipse(self.car.x * self.SCALE - 3 * self.SCALE, -self.car.y * self.SCALE - 3 * self.SCALE, 6 * self.SCALE, 6 * self.SCALE, QPen(QColor("blue")))
         rad = math.radians(self.car.theta)
         x2 = self.car.x + math.cos(rad) * 1.0 
         y2 = self.car.y + math.sin(rad) * 1.0 
-        self.car_dir_line = self.scene.addLine(self.car.x * self.SCALE, -self.car.y * self.SCALE, x2 * self.SCALE + 3 * self.SCALE * math.cos(rad), -y2 * self.SCALE - 3 * self.SCALE * math.sin(rad), QPen(QColor("cyan"), 1))
+        pen = QPen(QColor(0, 255, 255, 100), 1)  # 半透明 cyan，alpha=100
+        self.car_dir_line = self.scene.addLine(
+            self.car.x * self.SCALE,
+           -self.car.y * self.SCALE,
+            x2 * self.SCALE + 3 * self.SCALE * math.cos(rad),
+            -y2 * self.SCALE - 3 * self.SCALE * math.sin(rad),
+            pen
+        )
+        # self.car_dir_line = self.scene.addLine(self.car.x * self.SCALE, -self.car.y * self.SCALE, x2 * self.SCALE + 3 * self.SCALE * math.cos(rad), -y2 * self.SCALE - 3 * self.SCALE * math.sin(rad), QPen(QColor("cyan"), 1))
   
     def start_training(self):
         self.agent = Agent(
@@ -290,7 +338,7 @@ class TrackWindow(QWidget):
         action = self.agent.select_action(state)
         angle_choices = [-40, -20, 0, 20, 40]
         self.car.rotate(angle_choices[action])
-        self.car.move_forward(step=self.SCALE)
+        self.car.move_forward(step=self.SCALE/2)
 
         # 3. 更新state
         next_sensor = self.car.get_sensor_distances(border_to_segments(self.border_points))
