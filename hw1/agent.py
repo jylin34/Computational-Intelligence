@@ -58,7 +58,7 @@ class Agent:
 
     def decay_epsilon(self):
         self.epsilon = max(self.min_epsilon, self.epsilon * self.epsilon_decay)
-        print(self.epsilon)
+        print("Epsilon: " + str(self.epsilon))
 
     @staticmethod
     def argmax(lst):

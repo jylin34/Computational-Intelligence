@@ -9,6 +9,7 @@ from car import Car
 import math
 from agent import Agent
 import matplotlib.pyplot as plt
+import random
 
 class TrackWindow(QWidget):
     def __init__(self):
@@ -66,7 +67,7 @@ class TrackWindow(QWidget):
         self.control_layout.addWidget(self.import_btn)
 
         # Learning Rate
-        self.lr_input = QLineEdit("0.31")
+        self.lr_input = QLineEdit("0.4")
         self.param_layout.addRow(QLabel("Learning Rate"), self.lr_input)
 
         # Epsilon
@@ -74,11 +75,11 @@ class TrackWindow(QWidget):
         self.param_layout.addRow(QLabel("Epsilon"), self.eps_input)
 
         # Epsilon Decay
-        self.epsd_input = QLineEdit("0.995")
+        self.epsd_input = QLineEdit("0.95")
         self.param_layout.addRow(QLabel("Epsilon Decay"), self.epsd_input)
 
         # Discount Factor
-        self.discounted_factor = QLineEdit("0.95")
+        self.discounted_factor = QLineEdit("0.97")
         self.param_layout.addRow(QLabel("Discount Factor"), self.discounted_factor)
 
         # Step
@@ -86,7 +87,7 @@ class TrackWindow(QWidget):
         # self.param_layout.addRow(QLabel("Step"), self.step)
 
         # Episode
-        self.episode_label = QLineEdit("3000")
+        self.episode_label = QLineEdit("300")
         self.param_layout.addRow(QLabel("Episode"), self.episode_label)
 
         self.control_layout.addLayout(self.param_layout)
@@ -121,9 +122,9 @@ class TrackWindow(QWidget):
         self.reset_btn.clicked.connect(self.reset_car)
         self.control_layout.addWidget(self.reset_btn)
 
-        # self.run_all_btn = QPushButton("Run All Experiments")
-        # self.run_all_btn.clicked.connect(self.run_all_experiments)
-        # self.control_layout.addWidget(self.run_all_btn)
+        self.run_all_btn = QPushButton("Run All Experiments")
+        self.run_all_btn.clicked.connect(self.run_all_experiments)
+        self.control_layout.addWidget(self.run_all_btn)
 
         # 決策紀錄
         self.decision_log = QTextEdit()
@@ -241,8 +242,16 @@ class TrackWindow(QWidget):
         if self.car_dir_line:
             self.scene.removeItem(self.car_dir_line)
         # theta = random.choice([90, 0, -45])
-        theta = 90
-        self.car = Car(self.start[0] * self.SCALE, self.start[1] * self.SCALE, theta=theta)
+        # theta = 90
+        # self.car = Car(self.start[0] * self.SCALE, self.start[1] * self.SCALE, theta=theta)
+        x_min = -3
+        x_max = 3
+        random_x = random.uniform(x_min, x_max)
+        # random_x = self.start[0]
+        theta = 90  # 或 random.choice([0, 45, 90, ...]) 如果你想也隨機角度
+
+        self.car = Car(random_x, self.start[1], theta=theta)
+        print("Reset car: " + str(random_x) + ", " + str(self.start[1]))
 
         self.step_reward = 1
 
@@ -477,9 +486,9 @@ class TrackWindow(QWidget):
         results["baseline"] = baseline_rewards
 
         experiments = {
-            "lr": [0.1, 0.5, 0.7],
-            "epsilon": [0.9, 0.99, 0.995, 1],
-            "discount_factor": [0.93, 0.95, 0.99, 0.995, 0.997]
+            # "lr": [0.1, 0.5, 0.7],
+            "epsilon_decay": [0.993, 0.99, 0.97, 0.95, 0.93, 0.9, 0.89, 0.87, 0.85, 0.8],
+            # "discount_factor": [0.93, 0.95, 0.99, 0.995, 0.997]
         }
 
         for param, values in experiments.items():
