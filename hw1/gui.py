@@ -449,7 +449,8 @@ class TrackWindow(QWidget):
     def plot_smoothed_curves(self, results_dict):
         plt.figure(figsize=(10, 5))
         for label, rewards in results_dict.items():
-            plt.plot(self.smooth(rewards), label=label)
+            smoothed_rewards = self.smooth(rewards, window=200)
+            plt.plot(self.smooth(smoothed_rewards), label=label)
         plt.xlabel("Episode")
         plt.ylabel("Smoothed Reward")
         plt.title("Reward Convergence Trend of Each Group (Moving Average)")
@@ -483,12 +484,12 @@ class TrackWindow(QWidget):
         # 跑 baseline
         self.set_agent_params(**baseline_config)
         baseline_rewards = self.run_batch_training()
-        results["baseline"] = baseline_rewards
+        # results["baseline"] = baseline_rewards
 
         experiments = {
             # "lr": [0.1, 0.5, 0.7],
-            "epsilon_decay": [0.993, 0.99, 0.97, 0.95, 0.93, 0.9, 0.89, 0.87, 0.85, 0.8],
-            # "discount_factor": [0.93, 0.95, 0.99, 0.995, 0.997]
+            "epsilon_decay": [0.99, 0.97, 0.95],
+            # "discount_factor": [0.5, 0.8, 0.97]
         }
 
         for param, values in experiments.items():
