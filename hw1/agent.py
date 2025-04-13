@@ -2,7 +2,7 @@ import random
 import math
 
 class Agent:
-    def __init__(self, lr, discount_factor, epsilon, epsilon_decay, min_epsilon=0.05, num_actions=5):
+    def __init__(self, lr, discount_factor, epsilon, epsilon_decay, min_epsilon=0.001, num_actions=3):
         self.q_table = {}
         self.lr = lr
         self.gamma = discount_factor
@@ -58,9 +58,13 @@ class Agent:
 
     def decay_epsilon(self):
         self.epsilon = max(self.min_epsilon, self.epsilon * self.epsilon_decay)
+        print(self.epsilon)
 
     @staticmethod
     def argmax(lst):
         max_val = max(lst)
         indices = [i for i, val in enumerate(lst) if val == max_val]
         return random.choice(indices)
+
+    def reset_q_table(self):
+        self.q_table = {}

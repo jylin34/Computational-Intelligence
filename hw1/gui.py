@@ -8,6 +8,7 @@ from geometry import parse_track_file, border_to_segments, is_circle_near_segmen
 from car import Car
 import math
 from agent import Agent
+import matplotlib.pyplot as plt
 
 class TrackWindow(QWidget):
     def __init__(self):
@@ -45,6 +46,12 @@ class TrackWindow(QWidget):
         self.trajectory_item = None          # 對應的 QG
         self.is_testing = False
         self.step_reward = 1
+
+        self.reward_history = []
+        self.step_count = 0
+        self.total_reward = 0
+
+        self.angle_choices = [-40, 0, 40]
         # self.agent = Agent(
         #    lr=float(self.lr_input.text()),
         #    discount_factor=float(self.discounted_factor.text()),
@@ -113,6 +120,10 @@ class TrackWindow(QWidget):
         self.reset_btn = QPushButton("Reset Car")
         self.reset_btn.clicked.connect(self.reset_car)
         self.control_layout.addWidget(self.reset_btn)
+
+        # self.run_all_btn = QPushButton("Run All Experiments")
+        # self.run_all_btn.clicked.connect(self.run_all_experiments)
+        # self.control_layout.addWidget(self.run_all_btn)
 
         # 決策紀錄
         self.decision_log = QTextEdit()
@@ -329,13 +340,13 @@ class TrackWindow(QWidget):
         gx1, gy1 = self.goal_tl
         gx2, gy2 = self.goal_br
         if gx1 <= x <= gx2 and gy2 <= y <= gy1:
-           return 100000000000000, True
+           return 1000, True
 
         for x1, y1, x2, y2 in border_to_segments(self.border_points):
             if is_circle_near_segment(x, y, radius, x1, y1, x2, y2):
-                return -1000, True
+                return -100, True
 
-        self.step_reward *= 1.2
+        self.step_reward *= 1
         return self.step_reward, False
 
     def update_epoch(self, epoch):
@@ -351,9 +362,9 @@ class TrackWindow(QWidget):
 
         # 2. 根據state 選擇action 並更新car 
         action = self.agent.select_action(state)
-        angle_choices = [-40, -20, 0, 20, 40]
+        # angle_choices = [-40, -20, 0, 20, 40]
         # self.car.rotate(angle_choices[action])
-        self.car.move_forward(angle_choices[action])
+        self.car.move_forward(self.angle_choices[action])
 
         # 3. 更新state
         next_sensor = self.car.get_sensor_distances(border_to_segments(self.border_points))
@@ -361,6 +372,7 @@ class TrackWindow(QWidget):
 
         # 4. 計算reward
         reward, done = self.get_reward()
+        self.total_reward += reward
 
         # 5. 更新 Q-table
         self.agent.update_q_table(state, action, reward, next_state)
@@ -371,6 +383,9 @@ class TrackWindow(QWidget):
         
         # 7.
         if done:
+            self.reward_history.append(self.total_reward)  # 加入這次 episode 的 reward
+            self.total_reward = 0                          # 重設下一回合的 reward
+            self.step_count = 0
             self.agent.decay_epsilon()
             self.current_episode += 1
             self.reset_car()
@@ -392,12 +407,12 @@ class TrackWindow(QWidget):
         state = self.agent.get_state(sensor)
 
         # 完全 greedy 選擇最優動作
-        q_values = self.agent.q_table.get(state, [0]*5)
+        q_values = self.agent.q_table.get(state, [0]*len(self.angle_choices))
         action = q_values.index(max(q_values))
-        angle_choices = [-40, -20, 0, 20, 40]
+        # angle_choices = [-40, -20, 0, 20, 40]
 
         # self.car.rotate(angle_choices[action])
-        self.car.move_forward(angle_choices[action])
+        self.car.move_forward(self.angle_choices[action])
 
         self.update_car_graphics()
 
@@ -407,3 +422,109 @@ class TrackWindow(QWidget):
             self.is_testing = False
             self.log_decision("🧪 Test episode complete.")
 
+    def plot_rewards(self, baseline_rewards, experiment_rewards, label):
+        plt.figure(figsize=(10, 5))
+        plt.plot(baseline_rewards, label="Baseline")
+        plt.plot(experiment_rewards, label=label)
+        plt.xlabel("Episode")
+        plt.ylabel("Total Reward")
+        plt.title(f"Training Comparison - {label}")
+        plt.legend()
+        plt.grid()
+        plt.savefig(f"plot_{label}.png")  # 可選：儲存圖片
+        plt.show()
+
+    def smooth(self, values, window=50):
+        return [sum(values[max(0, i-window):i+1]) / (i - max(0, i-window) + 1) for i in range(len(values))]
+
+    def plot_smoothed_curves(self, results_dict):
+        plt.figure(figsize=(10, 5))
+        for label, rewards in results_dict.items():
+            plt.plot(self.smooth(rewards), label=label)
+        plt.xlabel("Episode")
+        plt.ylabel("Smoothed Reward")
+        plt.title("Reward Convergence Trend of Each Group (Moving Average)")
+        plt.legend()
+        plt.grid()
+        plt.tight_layout()
+        plt.savefig("smooth_reward_plot.png")
+        plt.show()
+
+    def plot_bar_avg_rewards(self, results_dict):
+        avg_rewards = {k: sum(v[-100:])/100 for k, v in results_dict.items()}
+        plt.figure(figsize=(20, 10))
+        plt.bar(avg_rewards.keys(), avg_rewards.values(), color="skyblue")
+        plt.xlabel("Experiment Group")
+        plt.ylabel("Average Reward（Last 100 episode）")
+        plt.title("Total Average reward")
+        plt.grid(axis='y')
+        plt.tight_layout()
+        plt.savefig("bar_avg_rewards.png")
+        plt.show()
+
+    def run_all_experiments(self):
+        baseline_config = {
+            "lr": 0.31,
+            "epsilon": 1.0,
+            "epsilon_decay": 0.995,
+            "discount_factor": 0.95
+        }
+        results = {}
+
+        # 跑 baseline
+        self.set_agent_params(**baseline_config)
+        baseline_rewards = self.run_batch_training()
+        results["baseline"] = baseline_rewards
+
+        experiments = {
+            "lr": [0.1, 0.5, 0.7],
+            "epsilon": [0.9, 0.99, 0.995, 1],
+            "discount_factor": [0.93, 0.95, 0.99, 0.995, 0.997]
+        }
+
+        for param, values in experiments.items():
+            for value in values:
+                config = baseline_config.copy()
+                config[param] = value
+                self.set_agent_params(**config)
+                rewards = self.run_batch_training()
+                label = f"{param}={value}"
+                results[label] = rewards
+
+        # 畫平滑曲線圖與平均柱狀圖
+        self.plot_smoothed_curves(results)
+        self.plot_bar_avg_rewards(results)
+
+    def run_batch_training(self):
+        self.agent.reset_q_table()
+        self.reset_car()
+        self.reward_history = []
+        self.total_reward = 0
+        self.current_episode = 0
+
+        for _ in range(int(self.episode_label.text())):
+            done = False
+            self.reset_car()
+            while not done:
+                sensor = self.car.get_sensor_distances(border_to_segments(self.border_points))
+                state = self.agent.get_state(sensor)
+                action = self.agent.select_action(state)
+                # angle_choices = [-40, -20, 0, 20, 40]
+                self.car.move_forward(self.angle_choices[action])
+                next_sensor = self.car.get_sensor_distances(border_to_segments(self.border_points))
+                next_state = self.agent.get_state(next_sensor)
+                reward, done = self.get_reward()
+                self.total_reward += reward
+                self.agent.update_q_table(state, action, reward, next_state)
+            self.reward_history.append(self.total_reward)
+            self.total_reward = 0
+            self.agent.decay_epsilon()
+        return self.reward_history.copy()
+
+    def set_agent_params(self, lr, epsilon, epsilon_decay, discount_factor):
+        self.agent = Agent(
+            lr=lr,
+            epsilon=epsilon,
+            epsilon_decay=epsilon_decay,
+            discount_factor=discount_factor
+        )
