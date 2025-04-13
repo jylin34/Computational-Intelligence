@@ -75,8 +75,8 @@ class TrackWindow(QWidget):
         self.param_layout.addRow(QLabel("Discount Factor"), self.discounted_factor)
 
         # Step
-        self.step = QLineEdit("500")
-        self.param_layout.addRow(QLabel("Step"), self.step)
+        # self.step = QLineEdit("500")
+        # self.param_layout.addRow(QLabel("Step"), self.step)
 
         # Episode
         self.episode_label = QLineEdit("3000")
