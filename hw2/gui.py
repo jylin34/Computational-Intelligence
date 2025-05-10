@@ -252,7 +252,7 @@ class TrackWindow(QWidget):
 
         # 畫邊界
         poly = QPolygonF([QPointF(x * self.SCALE, -y * self.SCALE) for x, y in border_points])
-        self.scene.addPolygon(poly, QPen(QColor("white"), 1))
+        self.scene.addPolygon(poly, QPen(QColor("gray"), 1))
 
         # 畫起點
         self.scene.addEllipse(start[0] * self.SCALE - 3, -start[1] * self.SCALE - 3, 6, 6, brush=QColor("red"))
@@ -317,7 +317,7 @@ class TrackWindow(QWidget):
         if self.trajectory_item:
             self.trajectory_item.setPath(self.path)
         else:
-            pen = QPen(QColor("white"), 1)
+            pen = QPen(QColor("gray"), 1)
             self.trajectory_item = self.scene.addPath(self.path, pen)
 
         pen = QPen(QColor(0, 0, 255, 70))
@@ -380,15 +380,3 @@ class TrackWindow(QWidget):
 
     def log_decision(self, text):
         self.decision_log.append(text)
-
-
-class FuzzyController:
-    def __init__(self):
-        self.fuzzifier = Fuzzifier()
-
-    def decide_action(self, sensor_data):
-        right, front, left = sensor_data
-        l_point = self.fuzzifier.l_point(left)
-        c_point = self.fuzzifier.c_point(front)
-        r_point = self.fuzzifier.r_point(right)
-        return Rules.apply(l_point, c_point, r_point)
