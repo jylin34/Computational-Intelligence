@@ -1,5 +1,5 @@
 from PyQt5.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel,
+    QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QLineEdit,
     QTextEdit, QGraphicsView, QGraphicsScene, QFileDialog, QFormLayout, QGridLayout, QGroupBox, QSlider
 )
 from PyQt5.QtGui import QPolygonF, QPen, QColor, QPainterPath, QBrush
@@ -41,13 +41,41 @@ class TrackWindow(QWidget):
         self.path = QPainterPath()
         self.trajectory_item = None
 
-        self.fuzzy_controller = FuzzyController()  # 初始化模糊控制器
+        # PSO
+        self.particle_count_input = None
+        self.cognition_rate_input = None
+        self.social_rate_input = None
+        self.inertia_weight_input = None
 
     def init_control_panel(self):
         # 匯入座標檔案
         self.import_btn = QPushButton("Import Track File")
         self.import_btn.clicked.connect(self.import_track)
         self.control_layout.addWidget(self.import_btn)
+
+        # PSO 參數調整
+        pso_group = QGroupBox("🕊️ PSO Parameters")
+        pso_group.setStyleSheet("QGroupBox { font-weight: bold; }")
+        pso_layout = QFormLayout()
+
+        # 粒子數
+        self.particle_count_input = QLineEdit("30")
+        pso_layout.addRow(QLabel("Particle Count:"), self.particle_count_input)
+
+        # 個體學習率
+        self.cognition_rate_input = QLineEdit("1.50")
+        pso_layout.addRow(QLabel("Cognition Rate:"), self.cognition_rate_input)
+
+        # 社會學習率
+        self.social_rate_input = QLineEdit("1.50")
+        pso_layout.addRow(QLabel("Social Rate:"), self.social_rate_input)
+
+        # 慣性權重
+        self.inertia_weight_input = QLineEdit("0.50")
+        pso_layout.addRow(QLabel("Inertia Weight:"), self.inertia_weight_input)
+
+        pso_group.setLayout(pso_layout)
+        self.control_layout.addWidget(pso_group)
 
         # 執行速度調整 + 顯示文字
         self.speed_label = QLabel("Simulation Speed: 1 ms")
@@ -83,7 +111,7 @@ class TrackWindow(QWidget):
         self.decision_log = QTextEdit()
         self.decision_log.setReadOnly(True)
         self.control_layout.addWidget(QLabel("Decision Log"))
-        self.control_layout.addWidget(self.decision_log)
+        self.control_layout.addWidget(self.decision_log)        
 
         car_group = QGroupBox("🚗 Car Information")
         car_group.setStyleSheet("QGroupBox { font-weight: bold; }")
@@ -252,21 +280,6 @@ class TrackWindow(QWidget):
         if done:
             self.timer.stop()
             self.log_decision("✅ Simulation complete.")
-
-    def get_reward(self):
-        x, y = self.car.x, self.car.y
-        radius = 3
-
-        gx1, gy1 = self.goal_tl
-        gx2, gy2 = self.goal_br
-        if gx1 <= x <= gx2 and gy2 <= y <= gy1:
-            return 1000, True
-
-        for x1, y1, x2, y2 in border_to_segments(self.border_points):
-            if is_circle_near_segment(x, y, radius, x1, y1, x2, y2):
-                return -100, True
-
-        return 1, False
 
     def log_decision(self, text):
         self.decision_log.append(text)
