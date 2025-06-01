@@ -37,7 +37,7 @@ class TrackWindow(QWidget):
         self.border_points = []
         self.SCALE = 4
         self.timer = QTimer()
-        self.timer.timeout.connect(self.simulation_step)
+        self.timer.timeout.connect(self.simulation_step) # 計時器綁定到simulation_step()，每次觸發都會執行這個function
         self.path = QPainterPath()
         self.trajectory_item = None
 
@@ -73,6 +73,10 @@ class TrackWindow(QWidget):
         # 慣性權重
         self.inertia_weight_input = QLineEdit("0.50")
         pso_layout.addRow(QLabel("Inertia Weight:"), self.inertia_weight_input)
+
+        # 慣性權重
+        self.iteration = QLineEdit("100")
+        pso_layout.addRow(QLabel("iteration:"), self.iteration)
 
         pso_group.setLayout(pso_layout)
         self.control_layout.addWidget(pso_group)
@@ -264,13 +268,13 @@ class TrackWindow(QWidget):
 
     def start_simulation(self):
         interval = self.speed_slider.value()
-        self.timer.start(interval)
+        self.timer.start(interval) # 開始計時器
 
     def stop_simulation(self):
         self.timer.stop()
         self.log_decision("🛑 Simulation manually stopped.")
 
-    def simulation_step(self):
+    def simulation_step(self): # 每次計時器觸發都會執行這個function
         sensor = self.car.get_sensor_distances(border_to_segments(self.border_points))
         action = self.fuzzy_controller.decide_action(sensor)
         self.car.move_forward(action)
