@@ -1,6 +1,4 @@
-<p align="center">
-  <img src="./assets/banner.png" width="1280" height="640" alt="Course Banner">
-</p>
+![Banner](./banner.jpeg)
 ## 113-2 Spring Computational-Intelligence 計算型智慧 CE6126*
 * 修課時間：2025 Feb~Jun （大四下）
 * 授課內容包含
