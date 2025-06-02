@@ -6,8 +6,11 @@ from PyQt5.QtGui import QPolygonF, QPen, QColor, QPainterPath, QBrush
 from PyQt5.QtCore import QPointF, Qt, QTimer
 from geometry import parse_track_file, border_to_segments, is_circle_near_segment
 from car import Car
+from pso import PSO
+from mlp import MLP
 import math
 import random
+from time import sleep
 
 class TrackWindow(QWidget):
     def __init__(self):
@@ -37,15 +40,9 @@ class TrackWindow(QWidget):
         self.border_points = []
         self.SCALE = 4
         self.timer = QTimer()
-        self.timer.timeout.connect(self.simulation_step) # 計時器綁定到simulation_step()，每次觸發都會執行這個function
+        self.timer.timeout.connect(self.pso_iteration) # 計時器綁定到simulation_step()，每次觸發都會執行這個function
         self.path = QPainterPath()
         self.trajectory_item = None
-
-        # PSO
-        self.particle_count_input = None
-        self.cognition_rate_input = None
-        self.social_rate_input = None
-        self.inertia_weight_input = None
 
     def init_control_panel(self):
         # 匯入座標檔案
@@ -59,19 +56,19 @@ class TrackWindow(QWidget):
         pso_layout = QFormLayout()
 
         # 粒子數
-        self.particle_count_input = QLineEdit("30")
+        self.particle_count_input = QLineEdit("50")
         pso_layout.addRow(QLabel("Particle Count:"), self.particle_count_input)
 
         # 個體學習率
-        self.cognition_rate_input = QLineEdit("1.50")
+        self.cognition_rate_input = QLineEdit("1.4")
         pso_layout.addRow(QLabel("Cognition Rate:"), self.cognition_rate_input)
 
         # 社會學習率
-        self.social_rate_input = QLineEdit("1.50")
+        self.social_rate_input = QLineEdit("1.4")
         pso_layout.addRow(QLabel("Social Rate:"), self.social_rate_input)
 
         # 慣性權重
-        self.inertia_weight_input = QLineEdit("0.50")
+        self.inertia_weight_input = QLineEdit("0.70")
         pso_layout.addRow(QLabel("Inertia Weight:"), self.inertia_weight_input)
 
         # 慣性權重
@@ -200,9 +197,11 @@ class TrackWindow(QWidget):
         if self.car_dir_line:
             self.scene.removeItem(self.car_dir_line)
 
-        random_x = random.uniform(-3, 3)
+        random_x = random.uniform(0, 0)
         theta = 90
         self.car = Car(random_x, self.start[1], theta=theta)
+
+        self.pso.car = self.car  
 
         if self.trajectory_item:
             self.scene.removeItem(self.trajectory_item)
@@ -215,6 +214,8 @@ class TrackWindow(QWidget):
         self.update_car_graphics()
 
     def update_car_graphics(self):
+        # print("Updating car graphics...")
+        # print(f"Car position: ({self.car.x:.2f}, {self.car.y:.2f}), θ: {self.car.theta:.1f}°")
         if self.car_item:
             self.scene.removeItem(self.car_item)
         if self.car_dir_line:
@@ -267,23 +268,83 @@ class TrackWindow(QWidget):
         )
 
     def start_simulation(self):
+        # 取得 PSO 參數
+        particle_count = int(self.particle_count_input.text()) # 粒子數
+        cognition_rate = float(self.cognition_rate_input.text()) # 個體學習率
+        social_rate = float(self.social_rate_input.text()) # 社會學習率
+        inertia_weight = float(self.inertia_weight_input.text()) # 慣性權重
+        iterations = int(self.iteration.text()) # 迭代次數
+
+        # 初始化 MLP
+        input_size, hidden_size, output_size = 3, 5, 3  # MLP 結構
+        self.mlp = MLP(input_size, hidden_size, output_size)
+
+        # 初始化 PSO
+        self.pso = PSO(
+            particle_count=particle_count,
+            cognition_rate=cognition_rate,
+            social_rate=social_rate,
+            inertia_weight=inertia_weight,
+            mlp=self.mlp,
+            car=self.car,
+            goal_tl=self.goal_tl,
+            goal_br=self.goal_br,
+            log_function=self.log_decision
+        )
+
+        # 設定 PSO 相關變數
+        self.current_iteration = 0
+        self.max_iterations = iterations
+        self.current_particle = 0
+        self.current_step = 0  # 初始化 current_step
+        self.max_steps_per_iteration = 100  # 每次 iteration 的最大步數
+
         interval = self.speed_slider.value()
-        self.timer.start(interval) # 開始計時器
+        self.timer.start(interval)  # 開始計時器
+
+    def pso_iteration(self):
+        """
+        每個 interval 執行所有粒子的完整模擬，更新動畫
+        """
+        if self.current_iteration < self.max_iterations:
+            # 遍歷所有粒子
+            for particle_index in range(self.pso.particle_count):
+                # 重置車輛到起始點
+                self.reset_car()
+                self.log_decision(f"Iteration {self.current_iteration + 1}/{self.max_iterations}, Particle {particle_index + 1}/{self.pso.particle_count}")
+
+                done = False
+                steps = 0
+                # 執行當前粒子的完整模擬
+                while not done and steps < self.max_steps_per_iteration:
+                    done = self.pso.evaluate_particle_step(
+                        steps,
+                        particle_index,
+                        self.border_points,
+                        step_callback=self.update_car_graphics
+                    )
+                    steps += 1
+                    # QTimer.singleShot(100, lambda: None)  # 每個 step 間隔 10ms (0.01 秒)
+                    # sleep(0.01)  # 暫停 10ms，模擬動畫效果
+
+
+            # 所有粒子完成後，更新粒子的位置與速度
+            self.pso.optimize_step(self.border_points)
+
+            # 進入下一次 iteration
+            self.current_iteration += 1
+            self.log_decision(f"Iteration {self.current_iteration}/{self.max_iterations} complete.")
+        else:
+            # 停止計時器
+            self.timer.stop()
+            self.log_decision("✅ PSO optimization complete.")
+            # 儲存最佳參數
+            self.pso.save_best_parameters("best_parameters.txt")
+
 
     def stop_simulation(self):
         self.timer.stop()
         self.log_decision("🛑 Simulation manually stopped.")
-
-    def simulation_step(self): # 每次計時器觸發都會執行這個function
-        sensor = self.car.get_sensor_distances(border_to_segments(self.border_points))
-        action = self.fuzzy_controller.decide_action(sensor)
-        self.car.move_forward(action)
-        self.update_car_graphics()
-
-        reward, done = self.get_reward()
-        if done:
-            self.timer.stop()
-            self.log_decision("✅ Simulation complete.")
 
     def log_decision(self, text):
         self.decision_log.append(text)

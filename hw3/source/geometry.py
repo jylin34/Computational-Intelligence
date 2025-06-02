@@ -89,3 +89,21 @@ def is_circle_near_segment(cx, cy, radius, x1, y1, x2, y2):
     dist_sq = (cx - nearest_x) ** 2 + (cy - nearest_y) ** 2
 
     return dist_sq <= radius ** 2
+
+def distance_to_goal(car_x, car_y, goal_tl, goal_br):
+    # 計算車輛到目標區域的距離
+    if car_x < goal_tl[0]:
+        dx = goal_tl[0] - car_x
+    elif car_x > goal_br[0]:
+        dx = car_x - goal_br[0]
+    else:
+        dx = 0
+
+    if car_y < goal_tl[1]:
+        dy = goal_tl[1] - car_y
+    elif car_y > goal_br[1]:
+        dy = car_y - goal_br[1]
+    else:
+        dy = 0
+
+    return math.sqrt(dx * dx + dy * dy)
