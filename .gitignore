@@ -1,8 +1,0 @@
-.gitignore
-hw1_venv/
-__pycache__/
-.DS_Store
-課堂簡報/*
-期末報告/*
-.docx
-.doc
